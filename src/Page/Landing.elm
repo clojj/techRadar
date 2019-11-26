@@ -34,7 +34,7 @@ update msg model =
     case msg of
         RetrieveRadarData ->
             ( { model | isLoading = True }
-            , httpGetData "http://localhost:63342/techRadar/src/tech.json"
+            , httpGetData "https://clojj.github.io/techRadar/src/tech.json"
             )
 
         RetrieveRadarDataSuccess _ ->
