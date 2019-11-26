@@ -1,6 +1,6 @@
 module Page.Radar exposing (Model, Msg, initialModel, update, view)
 
-import Data.Radar exposing (GoogleSheetBlip, Quadrant(..), Ring(..))
+import Data.Radar exposing (Blip, Quadrant(..), Ring(..))
 import Html exposing (Html, div, h3, li, p, ul)
 import Random exposing (Generator)
 import Svg exposing (Attribute, Svg, g, path, svg, text, text_)
@@ -10,13 +10,13 @@ import Util.Svg as SvgUtil
 
 
 type alias Model =
-    { blips : List GoogleSheetBlip
+    { blips : List Blip
     , selectionState : SelectionState
     , errors_ : Maybe (List String)
     }
 
 
-initialModel : List GoogleSheetBlip -> Maybe (List String) -> Model
+initialModel : List Blip -> Maybe (List String) -> Model
 initialModel blips errors_ =
     Model blips NoHighlightOrSelection errors_
 
@@ -28,7 +28,7 @@ type SelectionState
 
 
 type alias PositionedBlip =
-    { sheetBlip : GoogleSheetBlip
+    { sheetBlip : Blip
     , position : Position
     }
 
@@ -192,7 +192,7 @@ errorSection errors_ =
             text ""
 
 
-detailsSection : Maybe Quadrant -> List GoogleSheetBlip -> Html Msg
+detailsSection : Maybe Quadrant -> List Blip -> Html Msg
 detailsSection selectedQuadrant_ blips =
     case selectedQuadrant_ of
         Just quadrant ->
@@ -229,7 +229,7 @@ detailsSection selectedQuadrant_ blips =
             text ""
 
 
-detailsForRing : String -> List GoogleSheetBlip -> Html Msg
+detailsForRing : String -> List Blip -> Html Msg
 detailsForRing ringName blips =
     div
         []
@@ -240,7 +240,7 @@ detailsForRing ringName blips =
         ]
 
 
-blipsGrouping : List GoogleSheetBlip -> Quadrant -> Svg Msg
+blipsGrouping : List Blip -> Quadrant -> Svg Msg
 blipsGrouping blips quadrant =
     g
         [ class <| "quad " ++ classForQuadrant quadrant ]
@@ -375,7 +375,7 @@ circleBlip pos =
         []
 
 
-determineCoordinatesForRadar : List GoogleSheetBlip -> List PositionedBlip
+determineCoordinatesForRadar : List Blip -> List PositionedBlip
 determineCoordinatesForRadar blips =
     List.foldl
         (\blip ( accBlips, seed ) ->
@@ -411,7 +411,7 @@ startAngleForQuadrant quadrant =
             -pi
 
 
-findCoordForBlip : Int -> GoogleSheetBlip -> List Position -> Generator PositionedBlip
+findCoordForBlip : Int -> Blip -> List Position -> Generator PositionedBlip
 findCoordForBlip iteration blip positions =
     Random.andThen
         (\randPosition ->

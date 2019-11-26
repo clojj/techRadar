@@ -1,0 +1,156 @@
+{
+    "title": "KKS Tech Radar",
+    "date": "2019-12",
+    "technologies": {
+        "frameworks": {
+            "inEvaluierung": [
+                {
+                    "name": "Elm",
+                    "moved": 0
+                },
+                {
+                    "name": "Lombok",
+                    "moved": 0
+                },
+                {
+                    "name": "MapStruct",
+                    "moved": 0
+                }
+            ],
+            "inEinfuehrung": [
+                {
+                    "name": "Kafka",
+                    "moved": 1
+                }
+            ],
+            "produktiv": [
+                {
+                    "name": "VueJS",
+                    "moved": 0
+                }
+            ],
+            "auslaufend": [
+                {
+                    "name": "AngularJS",
+                    "moved": -1
+                }
+            ]
+        },
+        "dataManagement": {
+            "inEvaluierung": [
+                {
+                    "name": "CouchDB",
+                    "moved": 0
+                }
+            ],
+            "inEinfuehrung": [
+                {
+                    "name": "DB2",
+                    "moved": 0
+                }
+            ],
+            "produktiv": [
+                {
+                    "name": "Oracle",
+                    "moved": 0
+                },
+                {
+                    "name": "PostGres",
+                    "moved": 0
+                },
+                {
+                    "name": "Jasperserver",
+                    "moved": 0
+                }
+            ],
+            "auslaufend": [
+                {
+                    "name": "Enterprise DB",
+                    "moved": -1
+                }
+            ]
+        },
+        "infrastruktur": {
+            "inEvaluierung": [
+                {
+                    "name": "Docker",
+                    "moved": 0
+                }
+            ],
+            "inEinfuehrung": [
+            ],
+            "produktiv": [
+                {
+                    "name": "Jenkins",
+                    "moved": 0
+                },
+                {
+                    "name": "TeamCity",
+                    "moved": 0
+                },
+                {
+                    "name": "TestRail",
+                    "moved": 0
+                },
+                {
+                    "name": "JBoss",
+                    "moved": 0
+                },
+                {
+                    "name": "Spring Boot",
+                    "moved": 0
+                }
+            ],
+            "auslaufend": [
+            ]
+        },
+        "sprachen": {
+            "inEvaluierung": [
+                {
+                    "name": "Erlang",
+                    "moved": 0
+                }
+            ],
+            "inEinfuehrung": [
+                {
+                    "name": "Java 11",
+                    "moved": 0
+                },
+                {
+                    "name": "Kotlin",
+                    "moved": 0
+                }
+            ],
+            "produktiv": [
+                {
+                    "name": "Java 8",
+                    "moved": 0
+                },
+                {
+                    "name": "JavaScript",
+                    "moved": 0
+                }
+            ],
+            "auslaufend": [
+            ]
+        }
+    },
+    "colors": [
+        {
+            "name": "inEvaluierung",
+            "color": "#93c47d"
+        },
+        {
+            "name": "inEinfuehrung",
+            "color": "#93d2c2"
+        },
+        {
+            "name": "produktiv",
+            "color": "#fbdb84"
+        },
+        {
+            "name": "auslaufend",
+            "color": "#efafa9"
+        }
+    ]
+}

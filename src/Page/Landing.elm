@@ -1,12 +1,13 @@
 module Page.Landing exposing (Model, Msg(..), initialModel, update, view)
 
-import Data.Radar exposing (GoogleSheetBlip, Quadrant(..), Ring(..))
+import Data.Json exposing (KksTechTechnologies, Product, decodeKksTech)
+import Data.Radar exposing (Blip, Quadrant(..), Ring(..))
 import Html exposing (Html, button, div, input, text)
 import Html.Attributes exposing (class, placeholder, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Http
-import Maybe.Extra as MaybeExtra
-import Regex exposing (Match, Regex, find, fromString)
+import Json.Decode exposing (decodeString)
+import List exposing (concat, map)
 
 
 type alias Model =
@@ -23,7 +24,7 @@ initialModel =
 
 type Msg
     = RetrieveRadarData
-    | RetrieveRadarDataSuccess (List GoogleSheetBlip) (Maybe (List String))
+    | RetrieveRadarDataSuccess (List Blip)
     | RetrieveRadarDataFailure String
     | UpdateUrl String
 
@@ -32,18 +33,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         RetrieveRadarData ->
-            case findSheetId model.url of
-                Ok sheetId ->
-                    ( { model | isLoading = True }
-                    , httpGetSheetById sheetId
-                    )
+            ( { model | isLoading = True }
+            , httpGetData "http://localhost:63342/techRadar/src/tech.json"
+            )
 
-                Err error ->
-                    ( { model | error_ = Just error }
-                    , Cmd.none
-                    )
-
-        RetrieveRadarDataSuccess _ _ ->
+        RetrieveRadarDataSuccess _ ->
             -- This is handled in Main.elm
             ( model
             , Cmd.none
@@ -60,91 +54,56 @@ update msg model =
             )
 
 
-maybeSheetIdRegex : Maybe Regex
-maybeSheetIdRegex =
-    fromString "https:\\/\\/docs.google.com\\/spreadsheets\\/d\\/(.*?)($|\\/$|\\/.*|\\?.*)"
-
-
-findSheetId : String -> Result String String
-findSheetId url =
-    case maybeSheetIdRegex of
-        Nothing ->
-            Err "internal error: illegal regex"
-
-        Just sheetIdRegex ->
-            find sheetIdRegex url
-                |> List.head
-                |> Maybe.map .submatches
-                |> Maybe.map (List.head >> MaybeExtra.join)
-                |> MaybeExtra.join
-                |> Maybe.map Ok
-                |> Maybe.withDefault (Err "Unable to parse Google Sheet ID")
-
-
 httpResultToMsg : Result Http.Error String -> Msg
 httpResultToMsg result =
     case result of
-        Ok csv ->
+        Ok json ->
             let
-                sheetRows =
-                    case String.split "\u{000D}\n" csv of
-                        title :: rest ->
-                            rest
+                techData =
+                    Debug.log ("json " ++ json) (decodeString decodeKksTech json)
 
-                        _ ->
+                blips =
+                    case techData of
+                        Ok data ->
+                            transform data.technologies
+
+                        Err error ->
                             []
-
-                ( blips, errors ) =
-                    List.foldl
-                        (\row ( blips1, errors1, index1 ) ->
-                            case csvToBlipResult row index1 of
-                                Ok blip ->
-                                    ( blip :: blips1, errors1, index1 + 1 )
-
-                                Err error ->
-                                    ( blips1, error :: errors1, index1 + 1 )
-                        )
-                        ( [], [], 1 )
-                        sheetRows
-                        |> (\( blips1, errors1, _ ) ->
-                                if List.length errors1 == 0 then
-                                    ( blips1, Nothing )
-
-                                else
-                                    ( blips1, Just errors1 )
-                           )
             in
-            RetrieveRadarDataSuccess blips errors
+            RetrieveRadarDataSuccess blips
 
         Err httpError ->
             RetrieveRadarDataFailure "Unable to retrieve Google Sheet"
 
 
-httpGetSheetById : String -> Cmd Msg
-httpGetSheetById sheetId =
-    sheetJsonUrl sheetId
-        |> Http.getString
-        |> Http.send httpResultToMsg
+transform : KksTechTechnologies -> List Blip
+transform kksTechTechnologies =
+    trafoFrameworks kksTechTechnologies.frameworks.inEvaluierung
 
 
-sheetJsonUrl : String -> String
-sheetJsonUrl sheetId =
-    "https://docs.google.com/spreadsheets/d/" ++ sheetId ++ "/export?gid=0&format=csv"
+trafoFrameworks : List Product -> List Blip
+trafoFrameworks products =
+    map trafoProduct products
 
 
-csvToBlipResult : String -> Int -> Result String GoogleSheetBlip
-csvToBlipResult csv rowNum =
-    case String.split "," csv of
-        name :: ringStr :: quadrantStr :: isNewStr :: description :: _ ->
-            case ( getRing ringStr, getQuadrant quadrantStr, getNew isNewStr ) of
-                ( Ok ring, Ok quadrant, Ok isNew ) ->
-                    Ok <| GoogleSheetBlip name rowNum ring quadrant isNew description
+trafoProduct : Product -> Blip
+trafoProduct product =
+    { name = product.name
+    , rowNum = 1
+    , ring = Assess
+    , quadrant = LangsAndFrameworks
+    , isNew = False
+    , moved = product.moved
+    , description = product.name
+    }
 
-                _ ->
-                    Err <| "Row found with at least one unexpected value: " ++ csv
 
-        _ ->
-            Err <| "Row is not in the correct format: " ++ csv
+httpGetData : String -> Cmd Msg
+httpGetData dataUrl =
+    Http.get
+        { url = dataUrl
+        , expect = Http.expectString httpResultToMsg
+        }
 
 
 getRing : String -> Result String Ring
