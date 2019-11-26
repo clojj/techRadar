@@ -13,12 +13,13 @@ type alias Model =
     { blips : List Blip
     , selectionState : SelectionState
     , errors_ : Maybe (List String)
+    , hovertext : Maybe ( String, Position )
     }
 
 
 initialModel : List Blip -> Maybe (List String) -> Model
 initialModel blips errors_ =
-    Model blips NoHighlightOrSelection errors_
+    Model blips NoHighlightOrSelection errors_ Nothing
 
 
 type SelectionState
@@ -30,6 +31,7 @@ type SelectionState
 type alias PositionedBlip =
     { sheetBlip : Blip
     , position : Position
+    , name : String
     }
 
 
@@ -39,6 +41,7 @@ type alias Position =
 
 type Msg
     = MouseoverQuadrant Quadrant
+    | MouseoverBlip Position String
     | MouseoutQuadrant
     | OnQuadrantClick Quadrant
 
@@ -46,6 +49,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        MouseoverBlip position name ->
+            ( { model | hovertext = Just ( name, position ) }
+            , Cmd.none
+            )
+
         MouseoverQuadrant quadrant ->
             case model.selectionState of
                 NoHighlightOrSelection ->
@@ -174,10 +182,25 @@ view model =
                     , blipsGrouping platformsBlips Platforms
                     , blipsGrouping langsAndFrameworksBlips LangsAndFrameworks
                     ]
+                , g [] [ viewHovertext model.hovertext ]
                 ]
             ]
         , detailsSection selectedQuadrant_ model.blips
         ]
+
+
+viewHovertext : Maybe ( String, Position ) -> Svg msg
+viewHovertext hovertext =
+    case hovertext of
+        Just ( txt, position ) ->
+            text_
+                [ x <| String.fromFloat (position.x + 12)
+                , y <| String.fromFloat (position.y - 2)
+                ]
+                [ text txt ]
+
+        Nothing ->
+            g [] []
 
 
 errorSection : Maybe (List String) -> Html Msg
@@ -248,7 +271,7 @@ blipsGrouping blips quadrant =
             |> determineCoordinatesForRadar
             |> List.map
                 (\blip ->
-                    svgForBlip blip.position blip.sheetBlip.rowNum blip.sheetBlip.isNew
+                    svgForBlip blip.position blip.sheetBlip.rowNum blip.sheetBlip.isNew blip.name
                 )
         )
 
@@ -335,8 +358,8 @@ radiusesForRing ring =
             ( 0, 150 )
 
 
-svgForBlip : Position -> Int -> Bool -> Svg msg
-svgForBlip position rowNum isNew =
+svgForBlip : Position -> Int -> Bool -> String -> Svg Msg
+svgForBlip position rowNum isNew name =
     let
         blipPathSvg =
             if isNew then
@@ -346,7 +369,7 @@ svgForBlip position rowNum isNew =
                 circleBlip position
     in
     g
-        []
+        [ onMouseOver (MouseoverBlip position name) ]
         [ blipPathSvg
         , text_
             [ class "blip"
@@ -419,7 +442,7 @@ findCoordForBlip iteration blip positions =
                 findCoordForBlip (iteration + 1) blip positions
 
             else
-                PositionedBlip blip randPosition |> Random.constant
+                PositionedBlip blip randPosition blip.name |> Random.constant
         )
         (randomBlipCoordinates blip.ring (startAngleForQuadrant blip.quadrant))
 

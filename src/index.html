@@ -5349,14 +5349,14 @@ var $author$project$Main$RadarPage = function (a) {
 var $author$project$Main$RadarPageMsg = function (a) {
 	return {$: 'RadarPageMsg', a: a};
 };
-var $author$project$Page$Radar$Model = F3(
-	function (blips, selectionState, errors_) {
-		return {blips: blips, errors_: errors_, selectionState: selectionState};
+var $author$project$Page$Radar$Model = F4(
+	function (blips, selectionState, errors_, hovertext) {
+		return {blips: blips, errors_: errors_, hovertext: hovertext, selectionState: selectionState};
 	});
 var $author$project$Page$Radar$NoHighlightOrSelection = {$: 'NoHighlightOrSelection'};
 var $author$project$Page$Radar$initialModel = F2(
 	function (blips, errors_) {
-		return A3($author$project$Page$Radar$Model, blips, $author$project$Page$Radar$NoHighlightOrSelection, errors_);
+		return A4($author$project$Page$Radar$Model, blips, $author$project$Page$Radar$NoHighlightOrSelection, errors_, $elm$core$Maybe$Nothing);
 	});
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $elm$http$Http$BadStatus_ = F2(
@@ -6372,6 +6372,17 @@ var $author$project$Page$Radar$Select = function (a) {
 var $author$project$Page$Radar$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
+			case 'MouseoverBlip':
+				var position = msg.a;
+				var name = msg.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							hovertext: $elm$core$Maybe$Just(
+								_Utils_Tuple2(name, position))
+						}),
+					$elm$core$Platform$Cmd$none);
 			case 'MouseoverQuadrant':
 				var quadrant = msg.a;
 				var _v1 = model.selectionState;
@@ -6622,9 +6633,9 @@ var $author$project$Page$Radar$classForQuadrant = function (quadrant) {
 			return 'quad-langsAndFrameworks';
 	}
 };
-var $author$project$Page$Radar$PositionedBlip = F2(
-	function (sheetBlip, position) {
-		return {position: position, sheetBlip: sheetBlip};
+var $author$project$Page$Radar$PositionedBlip = F3(
+	function (sheetBlip, position, name) {
+		return {name: name, position: position, sheetBlip: sheetBlip};
 	});
 var $elm$random$Random$Generator = function (a) {
 	return {$: 'Generator', a: a};
@@ -6808,7 +6819,7 @@ var $author$project$Page$Radar$findCoordForBlip = F3(
 			$elm$random$Random$andThen,
 			function (randPosition) {
 				return (A2($author$project$Page$Radar$doesCoordinateCollide, randPosition, positions) && (iteration < 100)) ? A3($author$project$Page$Radar$findCoordForBlip, iteration + 1, blip, positions) : $elm$random$Random$constant(
-					A2($author$project$Page$Radar$PositionedBlip, blip, randPosition));
+					A3($author$project$Page$Radar$PositionedBlip, blip, randPosition, blip.name));
 			},
 			A2(
 				$author$project$Page$Radar$randomBlipCoordinates,
@@ -6860,6 +6871,10 @@ var $author$project$Page$Radar$determineCoordinatesForRadar = function (blips) {
 };
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$g = $elm$svg$Svg$trustedNode('g');
+var $author$project$Page$Radar$MouseoverBlip = F2(
+	function (a, b) {
+		return {$: 'MouseoverBlip', a: a, b: b};
+	});
 var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode('path');
@@ -6874,6 +6889,12 @@ var $author$project$Page$Radar$circleBlip = function (pos) {
 				'scale(' + ($elm$core$String$fromFloat($author$project$Page$Radar$blipWidth / 34) + (') translate(' + ($elm$core$String$fromFloat(((-404) + (pos.x * (34 / $author$project$Page$Radar$blipWidth))) - 17) + (', ' + ($elm$core$String$fromFloat(((-282) + (pos.y * (34 / $author$project$Page$Radar$blipWidth))) - 17) + ')'))))))
 			]),
 		_List_Nil);
+};
+var $elm$svg$Svg$Events$onMouseOver = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'mouseover',
+		$elm$json$Json$Decode$succeed(msg));
 };
 var $elm$svg$Svg$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$svg$Svg$text_ = $elm$svg$Svg$trustedNode('text');
@@ -6890,12 +6911,16 @@ var $author$project$Page$Radar$triangleBlip = function (pos) {
 };
 var $elm$svg$Svg$Attributes$x = _VirtualDom_attribute('x');
 var $elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
-var $author$project$Page$Radar$svgForBlip = F3(
-	function (position, rowNum, isNew) {
+var $author$project$Page$Radar$svgForBlip = F4(
+	function (position, rowNum, isNew, name) {
 		var blipPathSvg = isNew ? $author$project$Page$Radar$triangleBlip(position) : $author$project$Page$Radar$circleBlip(position);
 		return A2(
 			$elm$svg$Svg$g,
-			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Events$onMouseOver(
+					A2($author$project$Page$Radar$MouseoverBlip, position, name))
+				]),
 			_List_fromArray(
 				[
 					blipPathSvg,
@@ -6928,7 +6953,7 @@ var $author$project$Page$Radar$blipsGrouping = F2(
 			A2(
 				$elm$core$List$map,
 				function (blip) {
-					return A3($author$project$Page$Radar$svgForBlip, blip.position, blip.sheetBlip.rowNum, blip.sheetBlip.isNew);
+					return A4($author$project$Page$Radar$svgForBlip, blip.position, blip.sheetBlip.rowNum, blip.sheetBlip.isNew, blip.name);
 				},
 				$author$project$Page$Radar$determineCoordinatesForRadar(blips)));
 	});
@@ -7100,12 +7125,6 @@ var $elm$svg$Svg$Events$onMouseOut = function (msg) {
 		'mouseout',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$svg$Svg$Events$onMouseOver = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'mouseover',
-		$elm$json$Json$Decode$succeed(msg));
-};
 var $author$project$Util$Svg$polarToCartesian = F4(
 	function (cx, cy, radius, angleDegrees) {
 		var angleInRadians = ((angleDegrees - 90) * $elm$core$Basics$pi) / 180;
@@ -7231,6 +7250,28 @@ var $author$project$Page$Radar$makeQuadrant = F2(
 			$author$project$Page$Radar$ringsForQuadrant(quadrant));
 	});
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
+var $author$project$Page$Radar$viewHovertext = function (hovertext) {
+	if (hovertext.$ === 'Just') {
+		var _v1 = hovertext.a;
+		var txt = _v1.a;
+		var position = _v1.b;
+		return A2(
+			$elm$svg$Svg$text_,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$x(
+					$elm$core$String$fromFloat(position.x + 12)),
+					$elm$svg$Svg$Attributes$y(
+					$elm$core$String$fromFloat(position.y - 2))
+				]),
+			_List_fromArray(
+				[
+					$elm$svg$Svg$text(txt)
+				]));
+	} else {
+		return A2($elm$svg$Svg$g, _List_Nil, _List_Nil);
+	}
+};
 var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var $author$project$Page$Radar$view = function (model) {
 	var toolsBlips = A2(
@@ -7321,6 +7362,13 @@ var $author$project$Page$Radar$view = function (model) {
 										A2($author$project$Page$Radar$blipsGrouping, techniquesBlips, $author$project$Data$Radar$Techniques),
 										A2($author$project$Page$Radar$blipsGrouping, platformsBlips, $author$project$Data$Radar$Platforms),
 										A2($author$project$Page$Radar$blipsGrouping, langsAndFrameworksBlips, $author$project$Data$Radar$LangsAndFrameworks)
+									])),
+								A2(
+								$elm$svg$Svg$g,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$author$project$Page$Radar$viewHovertext(model.hovertext)
 									]))
 							]))
 					])),
